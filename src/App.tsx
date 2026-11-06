@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  isCategoryPage,
   isProductPhoto,
   mixByShop,
   shopById,
@@ -105,6 +106,7 @@ export default function App() {
   const filtered = useMemo(() => {
     if (!catalog) return [];
     return catalog.products.filter((product) => {
+      if (isCategoryPage(product)) return false;
       if (shopId && product.shop !== shopId) return false;
       if (!shopId && !isProductPhoto(product)) return false;
       if (!needle) return true;

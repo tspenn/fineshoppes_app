@@ -15,12 +15,17 @@ export type Product = {
   added?: string;
 };
 
+export function isCategoryPage(product: Product) {
+  return /\/category(\/|$)/i.test(product.url);
+}
+
 export function isProductPhoto(product: Product) {
   const image = product.image ?? "";
-  if (!image) return false;
-  if (product.url.includes("/catalog/category/")) return false;
-  if (/product-share|banner|logo|header/i.test(image)) return false;
-  if (/[-_]\d{6,}/.test(image)) return false;
+  if (!image || isCategoryPage(product)) return false;
+  if (/product-share|banner|logo|header|r2\.dev\/lovp_/i.test(image)) return false;
+  // Shopify file names are long hex ids. A digit run there is still a product photo.
+  if (/cdn\.shopify\.com/i.test(image)) return true;
+  if (/[-_]\d{6,}/.test(image) || /_\d{3,4}[-_.]/.test(image)) return false;
   return true;
 }
 

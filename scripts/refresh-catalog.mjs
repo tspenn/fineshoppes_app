@@ -52,8 +52,9 @@ const shops = [
   {
     id: "kindr",
     name: "Kindr",
-    tagline: "",
+    tagline: "Curated finds for little ones",
     url: "https://kindr.fineshoppes.com/",
+    source: "kindr",
   },
   {
     id: "senses",
@@ -74,18 +75,17 @@ const shops = [
     url: "https://tsteele.art/",
   },
   {
+    id: "steele",
+    name: "Style by Steele",
+    tagline: "Original designs by Tina Steele Penn",
+    url: "https://stylebysteele.com/",
+  },
+  {
     id: "faith",
     name: "Walking By Faith",
     tagline: "A magazine of faith, hope, and everyday grace",
     url: "https://faith.skylandpublishing.com/catalog",
     collection: "walk-by-faith",
-    sitemap: false,
-  },
-  {
-    id: "skyland",
-    name: "Skyland Apps",
-    tagline: "Tech store · browser-native tools",
-    url: "https://www.skylandapps.com/",
     sitemap: false,
   },
 ];
@@ -108,8 +108,13 @@ function sameSite(left, right) {
 
 function isProductPath(pathname, extraPrefixes) {
   const path = pathname.replace(/\/+$/, "") || "/";
+  if (/\/category(\/|$)/i.test(path)) return false;
   if (path.startsWith("/shop/") || path.startsWith("/product/") || /^\/products\/[^/]+/.test(path)) return true;
   return extraPrefixes.some((prefix) => path.startsWith(prefix) && path !== prefix.replace(/\/$/, ""));
+}
+
+function isCoverUp(title, url) {
+  return /\b(kimono|ruanna|cover-?up)\b/i.test(`${title} ${url}`);
 }
 
 async function getText(url) {
@@ -189,7 +194,75 @@ async function collectionProducts(shop, siteUrl) {
   return products;
 }
 
+function quotedList(source) {
+  return [...source.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+}
+
+function objectLiteral(source, marker) {
+  const start = source.indexOf(marker);
+  if (start < 0) return "";
+  const open = start + marker.length - 1;
+  let depth = 0;
+  for (let index = open; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === "{") depth += 1;
+    else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) return source.slice(open, index + 1);
+    }
+  }
+  return "";
+}
+
+async function kindrProducts(shop) {
+  const page = await getText(shop.url);
+  const scriptPath = page.text.match(/\/assets\/index-[^"]+\.js/)?.[0];
+  if (!scriptPath) throw new Error("no Kindr catalog script");
+  const bundle = (await getText(new URL(scriptPath, page.finalUrl).href)).text;
+  const host = bundle.match(/https:\/\/[a-z0-9]+\.supabase\.co/)?.[0];
+  const key = bundle.match(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/)?.[0];
+  if (!host || !key) throw new Error("no Kindr catalog access");
+
+  const response = await fetch(`${host}/functions/v1/shopify-catalog`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+    signal: AbortSignal.timeout(45000),
+  });
+  if (!response.ok) throw new Error(`${response.status} kindr catalog`);
+  const data = await response.json();
+
+  const curated = new Set(quotedList(objectLiteral(bundle, "Bc={")));
+  const vendors = quotedList(bundle.match(/yP=\[([^\]]*)\]/)?.[1] ?? "");
+  const blocked = new Set(quotedList(bundle.match(/fP=new Set\(\[([^\]]*)\]\)/)?.[1] ?? ""));
+  if (curated.size === 0 && vendors.length === 0) throw new Error("Kindr catalog filter was not found");
+
+  const products = [];
+  for (const item of data.products ?? []) {
+    const handle = item.handle;
+    if (!handle || item.availableForSale === false || blocked.has(handle)) continue;
+    const words = `${item.title ?? ""} ${handle.replace(/-/g, " ")}`;
+    if (/\b(shipping|membership|insurance|gift card)\b/i.test(words)) continue;
+    if (!(Number(item.price) > 0)) continue;
+    if (!curated.has(handle) && !vendors.includes(item.vendor ?? "")) continue;
+    const image = (item.images ?? []).find((entry) => entry?.url)?.url ?? "";
+    products.push({
+      id: `${shop.id}/${handle}`,
+      shop: shop.id,
+      title: item.title || titleFromPath(`/product/${handle}`),
+      url: new URL(`/product/${handle}`, shop.url).href,
+      ...(image ? { image } : {}),
+    });
+  }
+  return products;
+}
+
 async function productsFor(shop, siteUrl) {
+  if (shop.source === "kindr") return kindrProducts(shop);
   if (shop.collection) return collectionProducts(shop, siteUrl);
   if (shop.sitemap === false) return [];
   const origin = new URL(siteUrl).origin;
@@ -315,9 +388,17 @@ const missingImages = products.filter((product) => !product.image);
 console.log(`fetching ${missingImages.length} images`);
 let fetched = 0;
 await mapPool(missingImages, IMAGE_WORKERS, async (product) => {
-  product.image = await productImage(product.url);
+  product.image = await productImage(product.url, product.title);
   fetched += 1;
   if (fetched % 100 === 0) console.log(`images ${fetched}/${missingImages.length}`);
+});
+
+const coverUps = products.filter((product) => isCoverUp(product.title, product.url));
+console.log(`checking ${coverUps.length} kimonos and cover-ups`);
+await mapPool(coverUps, 4, async (product) => {
+  const chosen = await coverUpImage(product.url);
+  if (chosen) product.image = chosen;
+  else if (chosen === "") delete product.image;
 });
 
 const catalog = {
@@ -373,12 +454,52 @@ function productImageFromHtml(html, pageUrl) {
   return og ? absoluteImage(og, pageUrl) : "";
 }
 
-async function productImage(pageUrl) {
+function galleryImages(html, pageUrl) {
+  const images = [];
+  const seen = new Set();
+  for (const tag of html.matchAll(/<img\b[^>]*>/gi)) {
+    const src = tag[0].match(/\bsrc="([^"]+)"/i)?.[1];
+    if (!src) continue;
+    const url = absoluteImage(src, pageUrl);
+    if (seen.has(url) || /banner|logo|header|favicon|product-share|r2\.dev\/lovp_/i.test(url)) continue;
+    seen.add(url);
+    images.push({ url, alt: tag[0].match(/\balt="([^"]*)"/i)?.[1] ?? "" });
+  }
+  return images;
+}
+
+// A front-facing kimono on a swimsuit reads as a beach cover-up. Use a flat lay or a back view.
+function chooseCoverUpImage(images) {
+  const namedBack = images.find((image) => /(?:^|[/_-])back\.(?:png|jpe?g|webp)/i.test(image.url));
+  if (namedBack) return namedBack.url;
+  for (const view of ["view 4", "view 5", "view 3"]) {
+    const match = images.find((image) => new RegExp(`${view}$`, "i").test(image.alt.trim()));
+    if (match) return match.url;
+  }
+  const fronts = images.filter((image) => /view [12]$/i.test(image.alt.trim()));
+  if (fronts.length > 0 && fronts.length === images.length) return "";
+  return null;
+}
+
+async function productImage(pageUrl, title = "") {
   try {
     const page = await getText(pageUrl);
+    if (isCoverUp(title, pageUrl)) {
+      const chosen = chooseCoverUpImage(galleryImages(page.text, page.finalUrl));
+      if (chosen !== null) return chosen;
+    }
     return productImageFromHtml(page.text, page.finalUrl);
   } catch {
     return "";
+  }
+}
+
+async function coverUpImage(pageUrl) {
+  try {
+    const page = await getText(pageUrl);
+    return chooseCoverUpImage(galleryImages(page.text, page.finalUrl));
+  } catch {
+    return null;
   }
 }
 
