@@ -172,8 +172,10 @@ h1 {
 .shops {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.7rem 1.15rem;
+  justify-content: space-between;
+  width: 100%;
+  row-gap: 0.75rem;
+  column-gap: 1.75rem;
   margin-top: 1.15rem;
 }
 
@@ -184,7 +186,8 @@ h1 {
   background: none;
   color: var(--parchment);
   font-size: 0.75rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 
@@ -415,7 +418,8 @@ footer p {
   }
 
   .shops {
-    gap: 0.35rem 0.7rem;
+    row-gap: 0.55rem;
+    column-gap: 1rem;
     margin-top: 0.85rem;
   }
 
