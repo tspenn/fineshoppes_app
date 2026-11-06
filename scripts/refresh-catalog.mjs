@@ -78,6 +78,7 @@ const shops = [
     name: "Walking By Faith",
     tagline: "A magazine of faith, hope, and everyday grace",
     url: "https://faith.skylandpublishing.com/catalog",
+    collection: "walk-by-faith",
     sitemap: false,
   },
   {
@@ -125,7 +126,71 @@ function locsFromSitemap(xml) {
   return [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((match) => match[1]);
 }
 
+const COLLECTION_QUERY = `
+  query GetCollectionProducts($handle: String!, $first: Int!, $after: String) {
+    collection(handle: $handle) {
+      products(first: $first, after: $after) {
+        pageInfo { hasNextPage endCursor }
+        edges {
+          node {
+            title
+            handle
+            images(first: 1) { edges { node { url } } }
+          }
+        }
+      }
+    }
+  }
+`;
+
+async function collectionProducts(shop, siteUrl) {
+  const page = await getText(siteUrl);
+  const bundlePath = page.text.match(/\/assets\/shopify-[^"]+\.js/)?.[0];
+  if (!bundlePath) throw new Error(`no storefront script for ${shop.id}`);
+  const bundle = await getText(new URL(bundlePath, page.finalUrl).href);
+  const endpoint = bundle.text.match(/https:\/\/[^`"']+\/graphql\.json/)?.[0];
+  const token = bundle.text.match(/`([a-f0-9]{32})`/)?.[1];
+  if (!endpoint || !token) throw new Error(`no storefront access for ${shop.id}`);
+
+  const products = [];
+  let after = null;
+  for (let pageNumber = 0; pageNumber < 10; pageNumber += 1) {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": token,
+      },
+      body: JSON.stringify({
+        query: COLLECTION_QUERY,
+        variables: { handle: shop.collection, first: 250, after },
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!response.ok) throw new Error(`${response.status} ${shop.id} collection`);
+    const payload = await response.json();
+    const connection = payload.data?.collection?.products;
+    if (!connection) break;
+    for (const edge of connection.edges) {
+      const node = edge.node;
+      if (!node?.handle) continue;
+      const image = node.images?.edges?.[0]?.node?.url ?? "";
+      products.push({
+        id: `${shop.id}/${node.handle}`,
+        shop: shop.id,
+        title: node.title,
+        url: new URL(`/catalog/${node.handle}`, siteUrl).href,
+        ...(image ? { image } : {}),
+      });
+    }
+    if (!connection.pageInfo.hasNextPage) break;
+    after = connection.pageInfo.endCursor;
+  }
+  return products;
+}
+
 async function productsFor(shop, siteUrl) {
+  if (shop.collection) return collectionProducts(shop, siteUrl);
   if (shop.sitemap === false) return [];
   const origin = new URL(siteUrl).origin;
   let xml;
