@@ -1,89 +1,77 @@
 {
-  "updated": "2026-11-06T16:21:59.710Z",
+  "updated": "2026-11-06T17:03:42.158Z",
   "shops": [
     {
       "id": "adored",
       "name": "Adored",
       "tagline": "",
-      "url": "https://adored.fineshoppes.com/",
-      "checkout": "pay"
+      "url": "https://adored.fineshoppes.com/"
     },
     {
       "id": "alley",
       "name": "Back Alley Shoppe",
       "tagline": "",
-      "url": "https://alley.fineshoppes.com/",
-      "checkout": "pay"
+      "url": "https://alley.fineshoppes.com/"
     },
     {
       "id": "bewell",
       "name": "BeWell",
       "tagline": "Clean, natural skincare",
-      "url": "https://bewell.fineshoppes.com/",
-      "checkout": "pay"
+      "url": "https://bewell.fineshoppes.com/"
     },
     {
       "id": "boho",
       "name": "BOHO",
       "tagline": "",
-      "url": "https://www.bohostylemag.com/catalog",
-      "checkout": "pay"
+      "url": "https://www.bohostylemag.com/catalog"
     },
     {
       "id": "everest",
       "name": "Everest",
       "tagline": "Skincare and self-care",
-      "url": "https://everest.fineshoppes.com/",
-      "checkout": null
+      "url": "https://everest.fineshoppes.com/"
     },
     {
       "id": "home",
       "name": "Fineshoppes Home",
       "tagline": "Pull up a chair. Stay a while.",
-      "url": "https://home.fineshoppes.com/",
-      "checkout": "shopify"
+      "url": "https://home.fineshoppes.com/"
     },
     {
       "id": "kindr",
       "name": "Kindr",
       "tagline": "",
-      "url": "https://kindr.fineshoppes.com/",
-      "checkout": null
+      "url": "https://kindr.fineshoppes.com/"
     },
     {
       "id": "senses",
       "name": "Senses Marketplace",
       "tagline": "Soaps, skin therapy, and more",
-      "url": "https://senses.fineshoppes.com/",
-      "checkout": "pay"
+      "url": "https://senses.fineshoppes.com/"
     },
     {
       "id": "steward",
       "name": "Steward Limited",
       "tagline": "",
-      "url": "http://stewardlimited.com/",
-      "checkout": "pay"
+      "url": "http://stewardlimited.com/"
     },
     {
       "id": "tsteele",
       "name": "T Steele Art",
       "tagline": "Enter the mind of the artist — Tina Steele Penn",
-      "url": "https://tsteele.art/",
-      "checkout": null
+      "url": "https://tsteele.art/"
     },
     {
       "id": "faith",
       "name": "Walking By Faith",
       "tagline": "A magazine of faith, hope, and everyday grace",
-      "url": "https://faith.skylandpublishing.com/catalog",
-      "checkout": "pay"
+      "url": "https://faith.skylandpublishing.com/catalog"
     },
     {
       "id": "skyland",
       "name": "Skyland Apps",
       "tagline": "Tech store · browser-native tools",
-      "url": "https://www.skylandapps.com/",
-      "checkout": null
+      "url": "https://www.skylandapps.com/"
     }
   ],
   "products": [

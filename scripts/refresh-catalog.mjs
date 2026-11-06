@@ -23,7 +23,6 @@ const shops = [
     name: "Back Alley Shoppe",
     tagline: "",
     url: "https://alley.fineshoppes.com/",
-    checkout: "pay",
   },
   {
     id: "bewell",
@@ -49,7 +48,6 @@ const shops = [
     name: "Fineshoppes Home",
     tagline: "Pull up a chair. Stay a while.",
     url: "https://home.fineshoppes.com/",
-    checkout: "shopify",
   },
   {
     id: "kindr",
@@ -80,7 +78,6 @@ const shops = [
     name: "Walking By Faith",
     tagline: "A magazine of faith, hope, and everyday grace",
     url: "https://faith.skylandpublishing.com/catalog",
-    checkout: "pay",
     sitemap: false,
   },
   {
@@ -122,16 +119,6 @@ async function getText(url) {
   });
   if (!response.ok) throw new Error(`${response.status} ${url}`);
   return { text: await response.text(), finalUrl: response.url };
-}
-
-function checkoutFromHtml(html, preset) {
-  if (preset === "pay" || preset === "shopify") return preset;
-  const pay = html.includes("pay.fineshoppes.com");
-  const shopify = html.includes("buy.fineshoppes.com");
-  if (pay && !shopify) return "pay";
-  if (shopify && !pay) return "shopify";
-  if (pay && shopify) return "pay";
-  return null;
 }
 
 function locsFromSitemap(xml) {
@@ -200,12 +187,10 @@ async function buildCatalog() {
   const products = [];
 
   for (const shop of shops) {
-  let checkout = shop.checkout ?? null;
   let siteUrl = shop.url;
   try {
     const page = await getText(shop.url);
     siteUrl = page.finalUrl;
-    checkout = checkoutFromHtml(page.text, shop.checkout ?? null);
   } catch (error) {
     console.warn(`homepage skipped for ${shop.id}: ${error.message}`);
   }
@@ -216,9 +201,8 @@ async function buildCatalog() {
     name: shop.name,
     tagline: shop.tagline,
     url: shop.url,
-    checkout,
   });
-  console.log(`${shop.id}: ${found.length} products, checkout ${checkout ?? "on the shop"}`);
+  console.log(`${shop.id}: ${found.length} products`);
 }
 
 const catalogPath = new URL("../public/catalog.json", import.meta.url);

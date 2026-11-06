@@ -2,7 +2,7 @@
 
 A catalog you can install. Search the shops, then open that item on its own shop page.
 
-The shop handles the choice and the cart. Checkout stays where that shop already sends it: [pay.fineshoppes.com](https://pay.fineshoppes.com) or [buy.fineshoppes.com](https://buy.fineshoppes.com). This app does not take payment.
+The shop keeps the cart. This catalog does not take payment.
 
 ## Run locally
 
@@ -18,4 +18,4 @@ The app is at [http://127.0.0.1:4741](http://127.0.0.1:4741).
 
 ## Host
 
-This is its own site, separate from Pay. Point `app.fineshoppes.com` at this project with a CNAME to `cname.vercel-dns.com`.
+This is its own site. Point `app.fineshoppes.com` at this project with a CNAME to `cname.vercel-dns.com`.

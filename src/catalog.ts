@@ -1,11 +1,8 @@
-export type Checkout = "pay" | "shopify";
-
 export type Shop = {
   id: string;
   name: string;
   tagline: string;
   url: string;
-  checkout: Checkout | null;
 };
 
 export type Product = {
