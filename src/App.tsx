@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { checkoutLabel, shopById, type Catalog, type Shop } from "./catalog.ts";
-
-const PAGE = 48;
+import {
+  checkoutLabel,
+  isProductPhoto,
+  mixByShop,
+  shopById,
+  type Catalog,
+  type Product,
+  type Shop,
+} from "./catalog.ts";
 
 function readQuery() {
   const params = new URLSearchParams(window.location.search);
@@ -26,73 +32,118 @@ export default function App() {
   const [error, setError] = useState("");
   const [q, setQ] = useState(initial.q);
   const [shopId, setShopId] = useState(initial.shop);
-  const [shown, setShown] = useState(PAGE);
 
   useEffect(() => {
     let gone = false;
-    fetch("/catalog.json")
-      .then((response) => {
-        if (!response.ok) throw new Error("The catalog did not load.");
-        return response.json() as Promise<Catalog>;
-      })
-      .then((data) => {
-        if (!gone) setCatalog(data);
+    let followUp = 0;
+
+    async function load(url: string) {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error("The catalog did not load.");
+      const data = (await response.json()) as Catalog;
+      return { data, refreshing: response.headers.get("X-Catalog-Refreshing") === "yes" };
+    }
+
+    async function pullLive(again = false) {
+      try {
+        const live = await load("/api/catalog");
+        if (!gone && live.data.products.length > 0) setCatalog(live.data);
+        if (live.refreshing && !again) {
+          followUp = window.setTimeout(() => {
+            void pullLive(true);
+          }, 20000);
+        }
+      } catch {
+        // The saved catalog stays on screen when a live pull is unavailable.
+      }
+    }
+
+    load("/catalog.json")
+      .then((saved) => {
+        if (!gone) setCatalog(saved.data);
       })
       .catch(() => {
         if (!gone) setError("The catalog did not load.");
+      })
+      .finally(() => {
+        void pullLive();
       });
+
+    const timer = window.setInterval(() => {
+      void pullLive();
+    }, 10 * 60 * 1000);
+
     return () => {
       gone = true;
+      window.clearTimeout(followUp);
+      window.clearInterval(timer);
     };
   }, []);
 
   useEffect(() => {
     writeQuery(q, shopId);
-    setShown(PAGE);
   }, [q, shopId]);
 
   const shops = catalog?.shops ?? [];
   const shop = catalog && shopId ? shopById(catalog, shopId) : undefined;
   const needle = q.trim().toLowerCase();
 
-  const matches = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!catalog) return [];
     return catalog.products.filter((product) => {
       if (shopId && product.shop !== shopId) return false;
-      if (!needle) return Boolean(shopId);
+      if (!shopId && !isProductPhoto(product)) return false;
+      if (!needle) return true;
       const owner = shopById(catalog, product.shop);
       const haystack = `${product.title} ${owner?.name ?? ""} ${product.id}`.toLowerCase();
       return haystack.includes(needle);
     });
   }, [catalog, needle, shopId]);
 
-  const visibleShops = useMemo(() => {
-    if (!catalog || shopId) return [];
-    if (!needle) return catalog.shops;
-    return catalog.shops.filter((item) => {
-      const haystack = `${item.name} ${item.tagline}`.toLowerCase();
-      return haystack.includes(needle);
-    });
-  }, [catalog, needle, shopId]);
+  const shopIds = shops.map((item) => item.id);
+  const fresh = shopId
+    ? filtered.filter((product) => product.fresh).sort((a, b) => (b.added ?? "").localeCompare(a.added ?? ""))
+    : mixByShop(
+        filtered.filter((product) => product.fresh),
+        shopIds,
+      );
+  const rest = shopId
+    ? filtered.filter((product) => !product.fresh)
+    : mixByShop(
+        filtered.filter((product) => !product.fresh),
+        shopIds,
+      );
 
-  const browsingShops = !needle && !shopId;
+  function goHome(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    setQ("");
+    setShopId("");
+  }
+
+  const atHome = !needle && !shopId;
 
   return (
-    <div className="shell">
-      <header className="masthead">
-        <div>
-          <p className="eyebrow">The shops</p>
-          <h1>Fineshoppes</h1>
-        </div>
-        <a className="directory" href="https://fineshoppes.com/">
-          All shops
+    <div className="page">
+      <a className="mobile-header" href="/" onClick={goHome}>
+        <img src="/banner-shops.jpg" alt="Fineshoppes" />
+      </a>
+      <header className="site-header">
+        <a className="brand" href="/" onClick={goHome}>
+          <img className="logo" src="/fineshoppes-logo.png" alt="" />
+          <p className="tagline">Carefully curated especially for you!</p>
         </a>
+        <nav>
+          <a href="/" aria-current={atHome ? "page" : undefined} onClick={goHome}>
+            Home
+          </a>
+        </nav>
       </header>
+      <img className="banner" src="/banner-shops.jpg" alt="Fineshoppes storefront banner" />
 
-      <p className="lede">
-        Search the catalog, then open the item on its shop. The shop sends checkout to
-        pay.fineshoppes.com or buy.fineshoppes.com.
-      </p>
+      <main>
+      <div className="intro">
+        <h1>Our Shops at Fineshoppes!</h1>
+      </div>
 
       <form className="search" role="search" onSubmit={(event) => event.preventDefault()}>
         <label htmlFor="q">Search shops and items</label>
@@ -106,8 +157,15 @@ export default function App() {
       </form>
 
       <div className="shops" role="listbox" aria-label="Shops">
-        <button type="button" aria-pressed={shopId === ""} onClick={() => setShopId("")}>
-          All shops
+        <button
+          type="button"
+          aria-pressed={shopId === "" && !needle}
+          onClick={() => {
+            setQ("");
+            setShopId("");
+          }}
+        >
+          Home
         </button>
         {shops.map((item) => (
           <button
@@ -124,91 +182,75 @@ export default function App() {
       {error ? <p className="status">{error}</p> : null}
       {!catalog && !error ? <p className="status">Loading the shops…</p> : null}
 
-      {shop ? (
-        <ShopBanner shop={shop} count={matches.length} />
-      ) : null}
+      {shop ? <ShopHeading shop={shop} /> : null}
 
-      {browsingShops ? (
-        <section className="grid" aria-label="Shops">
-          {shops.map((item) => (
-            <ShopCard key={item.id} shop={item} onOpen={() => setShopId(item.id)} />
-          ))}
-        </section>
+      {catalog && filtered.length === 0 ? (
+        <p className="status">{shop ? "No items indexed yet." : "Nothing matches that search."}</p>
       ) : null}
-
-      {!browsingShops && catalog ? (
+      {catalog && fresh.length > 0 ? (
         <>
-          {visibleShops.length > 0 ? (
-            <section className="grid" aria-label="Matching shops">
-              {visibleShops.map((item) => (
-                <ShopCard key={item.id} shop={item} onOpen={() => setShopId(item.id)} />
-              ))}
-            </section>
-          ) : null}
-          {matches.length === 0 && !shop ? (
-            <p className="status">Nothing in the catalog matches that search.</p>
-          ) : matches.length === 0 ? null : (
-            <section className="grid" aria-label="Items">
-              {matches.slice(0, shown).map((product) => {
-                const owner = shopById(catalog, product.shop);
-                return (
-                  <article key={product.id} className="card">
-                    <p className="shop-name">{owner?.name ?? product.shop}</p>
-                    <h2>{product.title}</h2>
-                    <p className="checkout">{checkoutLabel(owner?.checkout ?? null)}</p>
-                    <a className="open" href={product.url} target="_blank" rel="noopener noreferrer">
-                      View at {owner?.name ?? "the shop"}
-                    </a>
-                  </article>
-                );
-              })}
-            </section>
-          )}
-          {shown < matches.length ? (
-            <button className="more" type="button" onClick={() => setShown((count) => count + PAGE)}>
-              Show more ({matches.length - shown} left)
-            </button>
-          ) : null}
+          <p className="section-label">New additions</p>
+          <Mosaic products={fresh} catalog={catalog} />
         </>
       ) : null}
+      {catalog && rest.length > 0 ? <Mosaic products={rest} catalog={catalog} /> : null}
 
+      </main>
       <footer>
-        <p>A directory of the shops. Descriptions, choices, and checkout stay on the shop.</p>
+        <p>© {new Date().getFullYear()} Fineshoppes</p>
       </footer>
     </div>
   );
 }
 
-function ShopBanner({ shop, count }: { shop: Shop; count: number }) {
+function ShopHeading({ shop }: { shop: Shop }) {
   return (
-    <div className="banner-shop">
-      <div>
-        <h2>{shop.name}</h2>
-        {shop.tagline ? <p>{shop.tagline}</p> : null}
-        <p className="checkout">{checkoutLabel(shop.checkout)}</p>
-        <p className="count">{count === 0 ? "No items indexed yet." : `${count} items in the catalog.`}</p>
-      </div>
-      <a className="open" href={shop.url} target="_blank" rel="noopener noreferrer">
-        Open {shop.name}
+    <div className="shop-heading">
+      <h2>{shop.name}</h2>
+      {shop.tagline ? <p>{shop.tagline}</p> : null}
+      <p className="checkout">{checkoutLabel(shop.checkout)}</p>
+      <a href={shop.url} target="_blank" rel="noopener noreferrer">
+        Open shop
       </a>
     </div>
   );
 }
 
-function ShopCard({ shop, onOpen }: { shop: Shop; onOpen: () => void }) {
+function Mosaic({ products, catalog }: { products: Product[]; catalog: Catalog }) {
   return (
-    <article className="card">
-      <h2>{shop.name}</h2>
-      {shop.tagline ? <p>{shop.tagline}</p> : null}
-      <p className="checkout">{checkoutLabel(shop.checkout)}</p>
-      <div className="actions">
-        <button type="button" onClick={onOpen}>
-          Items
-        </button>
-        <a className="open" href={shop.url} target="_blank" rel="noopener noreferrer">
-          Open shop
-        </a>
-      </div>
-    </article>
+    <section className="mosaic" aria-label="Items">
+      {products.map((product) => {
+        const owner = shopById(catalog, product.shop);
+        return <Tile key={product.id} product={product} name={owner?.name ?? "Shop"} />;
+      })}
+    </section>
+  );
+}
+
+function Tile({ product, name }: { product: Product; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = isProductPhoto(product) && !failed;
+  return (
+    <a
+      className="tile"
+      href={product.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${product.title}. ${name}`}
+    >
+      {showImage && product.image ? (
+        <img
+          src={product.image}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span className="frame">{product.title}</span>
+      )}
+      {showImage ? <span className="title">{product.title}</span> : null}
+      <span className="store">{name}</span>
+    </a>
   );
 }

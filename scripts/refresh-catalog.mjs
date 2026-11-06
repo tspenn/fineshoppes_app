@@ -1,8 +1,15 @@
 /**
  * Rebuild public/catalog.json from the live shop list.
  * Product rows come from each shop's sitemap (/shop/, /product/, /products/).
- * Checkout is pay.fineshoppes.com or buy.fineshoppes.com when the shop page says so.
+ * A handful of new items are marked fresh and shown under New additions.
+ * A long drop from one shop, such as a new Shopify vendor, is not.
  */
+
+import { readFile, writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
+
+const BULK_NEW = 25;
+const IMAGE_WORKERS = 12;
 
 const shops = [
   {
@@ -87,7 +94,11 @@ const shops = [
 
 function titleFromPath(pathname) {
   const slug = pathname.split("/").filter(Boolean).at(-1) ?? "";
-  const words = decodeURIComponent(slug).replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  const words = decodeURIComponent(slug)
+    .replace(/[-_]+/g, " ")
+    .replace(/\ball over print\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!words) return "Shop item";
   return words.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
@@ -173,10 +184,22 @@ async function productsFor(shop, siteUrl) {
   return products;
 }
 
-const catalogShops = [];
-const products = [];
+let refreshing = null;
 
-for (const shop of shops) {
+export function updateCatalog() {
+  if (!refreshing) {
+    refreshing = buildCatalog().finally(() => {
+      refreshing = null;
+    });
+  }
+  return refreshing;
+}
+
+async function buildCatalog() {
+  const catalogShops = [];
+  const products = [];
+
+  for (const shop of shops) {
   let checkout = shop.checkout ?? null;
   let siteUrl = shop.url;
   try {
@@ -198,12 +221,105 @@ for (const shop of shops) {
   console.log(`${shop.id}: ${found.length} products, checkout ${checkout ?? "on the shop"}`);
 }
 
+const catalogPath = new URL("../public/catalog.json", import.meta.url);
+let previous = null;
+try {
+  previous = JSON.parse(await readFile(catalogPath, "utf8"));
+} catch {
+  previous = null;
+}
+
+const previousByUrl = new Map((previous?.products ?? []).map((product) => [product.url, product]));
+const hadCatalog = previousByUrl.size > 0;
+const now = new Date().toISOString();
+const newcomers = new Map();
+
+for (const product of products) {
+  const prior = previousByUrl.get(product.url);
+  if (prior?.image) product.image = prior.image;
+  if (prior?.fresh) {
+    product.fresh = true;
+    product.added = prior.added;
+  } else if (hadCatalog && !prior) {
+    const list = newcomers.get(product.shop) ?? [];
+    list.push(product);
+    newcomers.set(product.shop, list);
+  }
+}
+
+let freshCount = 0;
+let bulkCount = 0;
+for (const [shopId, list] of newcomers) {
+  if (list.length >= BULK_NEW) {
+    bulkCount += list.length;
+    console.log(`${shopId}: ${list.length} new items kept in the main list`);
+    continue;
+  }
+  for (const product of list) {
+    product.fresh = true;
+    product.added = now;
+    freshCount += 1;
+  }
+}
+
+const missingImages = products.filter((product) => !product.image);
+console.log(`fetching ${missingImages.length} images`);
+let fetched = 0;
+await mapPool(missingImages, IMAGE_WORKERS, async (product) => {
+  product.image = await productImage(product.url);
+  fetched += 1;
+  if (fetched % 100 === 0) console.log(`images ${fetched}/${missingImages.length}`);
+});
+
 const catalog = {
-  updated: new Date().toISOString(),
+  updated: now,
   shops: catalogShops,
   products,
 };
 
-const { writeFile } = await import("node:fs/promises");
-await writeFile(new URL("../public/catalog.json", import.meta.url), `${JSON.stringify(catalog, null, 2)}\n`);
-console.log(`wrote ${products.length} products across ${catalogShops.length} shops`);
+await writeFile(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+  console.log(
+    `wrote ${products.length} products, ${freshCount} new additions, ${bulkCount} from a bulk drop`,
+  );
+  return catalog;
+}
+
+const launchedDirectly =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (launchedDirectly) {
+  updateCatalog().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+function decodeHtml(value) {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
+}
+
+async function productImage(pageUrl) {
+  try {
+    const page = await getText(pageUrl);
+    const og = page.text.match(/property="og:image" content="([^"]+)"/)?.[1];
+    if (!og) return "";
+    return new URL(decodeHtml(og), page.finalUrl).href;
+  } catch {
+    return "";
+  }
+}
+
+async function mapPool(items, limit, task) {
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      await task(items[index], index);
+    }
+  }
+  const workers = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workers }, () => worker()));
+}

@@ -1,8 +1,9 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { catalogApi } from "./scripts/catalog-plugin.mjs";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), catalogApi()],
   server: {
     host: true,
     port: 4741,

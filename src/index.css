@@ -1,13 +1,13 @@
 :root {
-  --ink: #f4f1e8;
-  --muted: #c5cdb4;
+  --parchment: #f4efe4;
   --gold: #c9a94a;
-  --olive: #2b3320;
+  --forest: #2b3320;
   --deep: #1f2517;
   --line: rgba(201, 169, 74, 0.35);
-  color: var(--ink);
-  background: var(--olive);
+  color: var(--parchment);
+  background: var(--forest);
   font-family: "Libre Franklin", "Segoe UI", sans-serif;
+  font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,8 +23,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--olive);
-  color: var(--ink);
+  background: var(--forest);
+  color: var(--parchment);
 }
 
 button,
@@ -37,187 +37,400 @@ button {
   cursor: pointer;
 }
 
-.shell {
-  max-width: 72rem;
+.site-header {
+  background: var(--deep);
+  padding: 2rem 1.5rem 1.75rem;
+  text-align: center;
+}
+
+.brand {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.logo {
+  display: block;
+  height: 8rem;
+  width: auto;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 4rem;
 }
 
-.masthead {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
+.mobile-header {
+  display: none;
 }
 
-.eyebrow {
-  margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+.tagline {
+  margin: 0.55rem 0 0;
   color: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+nav {
+  margin-top: 1.4rem;
+}
+
+nav a {
+  color: var(--parchment);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+nav a:hover,
+nav a[aria-current="page"] {
+  color: var(--gold);
+}
+
+.banner {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+main {
+  max-width: 78rem;
+  margin: 0 auto;
+  padding: 4rem 2rem 4rem;
+}
+
+.intro,
+.search,
+.shops,
+.shop-heading,
+.status,
+.section-label {
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.intro {
+  text-align: center;
 }
 
 h1,
 h2 {
+  margin: 0;
+  color: var(--gold);
   font-family: "Cormorant Garamond", Georgia, serif;
   font-weight: 500;
   font-style: italic;
 }
 
 h1 {
-  margin: 0;
-  font-size: 3rem;
-  line-height: 0.95;
-  color: var(--gold);
+  font-size: 2.75rem;
+  line-height: 1.1;
 }
 
-.directory {
-  color: var(--ink);
-  text-underline-offset: 3px;
-}
-
-.lede {
-  max-width: 40rem;
-  margin: 1.25rem 0 0;
-  color: var(--muted);
+.intro p {
+  margin: 0.85rem 0 0;
+  color: rgba(244, 239, 228, 0.85);
 }
 
 .search {
-  margin-top: 1.25rem;
+  margin-top: 2.25rem;
 }
 
 .search label {
   display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  margin-bottom: 0.45rem;
   color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .search input {
   width: 100%;
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 0.9rem;
   border: 1px solid var(--line);
-  border-radius: 0;
   background: var(--deep);
-  color: var(--ink);
+  color: var(--parchment);
+}
+
+.search input::placeholder {
+  color: rgba(244, 239, 228, 0.45);
 }
 
 .search input:focus {
-  outline: 2px solid var(--gold);
+  outline: 1px solid var(--gold);
   outline-offset: 2px;
 }
 
 .shops {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-}
-
-.shops button,
-.actions button,
-.more {
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--ink);
-  padding: 0.45rem 0.75rem;
-  white-space: nowrap;
-}
-
-.shops button[aria-pressed="true"] {
-  background: var(--gold);
-  color: var(--deep);
-  border-color: var(--gold);
-}
-
-.banner-shop,
-.card {
-  border: 1px solid var(--line);
-  background: rgba(31, 37, 23, 0.65);
-  padding: 1rem 1.1rem 1.15rem;
-}
-
-.banner-shop {
-  display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1.25rem;
+  justify-content: center;
+  gap: 0.7rem 1.15rem;
+  margin-top: 1.5rem;
 }
 
-.banner-shop h2,
-.card h2 {
-  margin: 0;
-  font-size: 1.7rem;
-  color: var(--gold);
-}
-
-.shop-name {
-  margin: 0;
+.shops button {
+  padding: 0.15rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--parchment);
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.shops button[aria-pressed="true"] {
+  border-bottom-color: var(--gold);
   color: var(--gold);
 }
 
-.card p,
-.banner-shop p {
-  margin: 0.45rem 0 0;
+.shop-heading {
+  margin-top: 2.5rem;
+  text-align: center;
+}
+
+.shop-heading h2 {
+  font-size: 2.15rem;
+}
+
+.shop-heading p,
+.item p {
+  margin: 0.4rem 0 0;
 }
 
 .checkout,
 .count,
-.status,
-footer p {
-  color: var(--muted);
+.status {
+  color: rgba(244, 239, 228, 0.72);
   font-size: 0.92rem;
 }
 
-.status {
-  margin-top: 1.25rem;
+.shop-heading a,
+.item a,
+.more {
+  color: var(--gold);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 0.85rem;
-  margin-top: 1.25rem;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  align-items: center;
-  margin-top: 0.9rem;
-}
-
-.open {
+.shop-heading a {
   display: inline-block;
-  margin-top: 0.85rem;
-  color: var(--deep);
-  background: var(--gold);
-  text-decoration: none;
-  padding: 0.45rem 0.75rem;
+  margin-top: 0.8rem;
 }
 
-.actions .open {
-  margin-top: 0;
+.items {
+  margin-top: 1.5rem;
+}
+
+.item {
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.shop-name {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.item h2 {
+  margin-top: 0.2rem;
+  font-size: 1.65rem;
+}
+
+.item a {
+  display: inline-block;
+  margin-top: 0.45rem;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
 .more {
-  margin-top: 1rem;
+  display: block;
+  margin: 1.5rem auto 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.status {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.section-label {
+  margin-top: 2.75rem;
+  color: var(--gold);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.mosaic {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2.5rem 1.85rem;
+  margin-top: 2rem;
+}
+
+.tile {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.tile img,
+.frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #fff;
+  border: 1px solid var(--gold);
+}
+
+.frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.4rem;
+  color: var(--deep);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.15rem;
+  font-style: italic;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.title,
+.store {
+  display: block;
+  text-align: center;
+}
+
+.title {
+  margin-top: 0.4rem;
+  color: var(--parchment);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  line-height: 1.2;
+}
+
+.store {
+  margin-top: 0.2rem;
+  color: var(--gold);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 footer {
-  margin-top: 2.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
+  background: var(--deep);
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+footer p {
+  margin: 0;
+  color: rgba(244, 239, 228, 0.7);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .mobile-header {
+    display: block;
+    line-height: 0;
+  }
+
+  .mobile-header img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .logo,
+  .banner {
+    display: none;
+  }
+
+  .site-header {
+    padding: 0.7rem 1rem 0.65rem;
+  }
+
+  .tagline {
+    margin-top: 0;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    line-height: 1.35;
+  }
+
+  nav {
+    margin-top: 0.4rem;
+  }
+
+  nav a {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+
+  main {
+    padding: 1.15rem 1rem 2rem;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+  }
+
+  .shop-heading h2,
+  .item h2 {
+    font-size: 1.35rem;
+  }
+
+  .search {
+    margin-top: 1rem;
+  }
+
+  .search label {
+    margin-bottom: 0.3rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .search input {
+    padding: 0.55rem 0.7rem;
+    font-size: 0.85rem;
+  }
+
+  .shops {
+    gap: 0.35rem 0.7rem;
+    margin-top: 0.85rem;
+  }
+
+  .shops button,
+  .store,
+  footer p {
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+  }
+
+  .mosaic {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem 0.75rem;
+  }
+
+  footer {
+    padding: 1.1rem 1rem;
+  }
 }

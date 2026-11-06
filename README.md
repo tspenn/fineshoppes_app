@@ -14,7 +14,7 @@ npm run dev
 
 The app is at [http://127.0.0.1:4741](http://127.0.0.1:4741).
 
-`npm run catalog` reads each shop sitemap and rewrites `public/catalog.json`. Product links are the shop’s own `/shop/`, `/product/`, or `/products/` pages. `npm run build` typechecks and builds the client.
+`npm run catalog` reads each shop sitemap and rewrites `public/catalog.json`. Each card uses the shop’s picture and links to that shop’s product page. A few new items are marked for the New additions row. A long drop from one shop, such as a new Shopify vendor, stays in the main mix. `npm run build` typechecks and builds the client.
 
 ## Host
 
