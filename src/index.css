@@ -344,6 +344,23 @@ footer {
   text-align: center;
 }
 
+.install,
+.install-hint {
+  margin: 0 0 0.75rem;
+  color: var(--gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.install {
+  padding: 0;
+  border: 0;
+  background: none;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 footer p {
   margin: 0;
   color: rgba(244, 239, 228, 0.7);

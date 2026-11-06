@@ -25,12 +25,27 @@ function writeQuery(q: string, shop: string) {
   window.history.replaceState(null, "", next);
 }
 
+type InstallPrompt = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
 export default function App() {
   const initial = readQuery();
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [error, setError] = useState("");
   const [q, setQ] = useState(initial.q);
   const [shopId, setShopId] = useState(initial.shop);
+  const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
+
+  useEffect(() => {
+    function offerInstall(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPrompt);
+    }
+    window.addEventListener("beforeinstallprompt", offerInstall);
+    return () => window.removeEventListener("beforeinstallprompt", offerInstall);
+  }, []);
 
   useEffect(() => {
     let gone = false;
@@ -192,6 +207,19 @@ export default function App() {
 
       </main>
       <footer>
+        {installPrompt ? (
+          <button
+            className="install"
+            type="button"
+            onClick={() => {
+              void installPrompt.prompt().then(() => setInstallPrompt(null));
+            }}
+          >
+            Add Fineshoppes to this device
+          </button>
+        ) : (
+          <p className="install-hint">Save this page to your home screen, or install it and pin it to the taskbar.</p>
+        )}
         <p>© {new Date().getFullYear()} Fineshoppes</p>
       </footer>
     </div>

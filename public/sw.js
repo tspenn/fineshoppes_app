@@ -1,4 +1,4 @@
-const CACHE = "fineshoppes-app-v1";
+const CACHE = "fineshoppes-app-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
