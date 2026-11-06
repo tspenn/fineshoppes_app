@@ -220,7 +220,7 @@ const newcomers = new Map();
 
 for (const product of products) {
   const prior = previousByUrl.get(product.url);
-  if (prior?.image) product.image = prior.image;
+  if (prior?.image && !prior.image.includes("r2.dev/lovp_")) product.image = prior.image;
   if (prior?.fresh) {
     product.fresh = true;
     product.added = prior.added;
@@ -284,12 +284,34 @@ function decodeHtml(value) {
     .replaceAll("&#39;", "'");
 }
 
+function absoluteImage(value, pageUrl) {
+  const raw = decodeHtml(String(value)).trim();
+  if (!raw) return "";
+  if (raw.startsWith("//")) return `https:${raw}`;
+  return new URL(raw, pageUrl).href;
+}
+
+function productImageFromHtml(html, pageUrl) {
+  const block = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1];
+  if (block) {
+    try {
+      const data = JSON.parse(block);
+      const product = data?.["@type"] === "Product" ? data : null;
+      const image = Array.isArray(product?.image) ? product.image[0] : product?.image;
+      const src = typeof image === "string" ? image : image?.url;
+      if (src) return absoluteImage(src, pageUrl);
+    } catch {
+      // The share image below is the fallback.
+    }
+  }
+  const og = html.match(/property="og:image" content="([^"]+)"/)?.[1];
+  return og ? absoluteImage(og, pageUrl) : "";
+}
+
 async function productImage(pageUrl) {
   try {
     const page = await getText(pageUrl);
-    const og = page.text.match(/property="og:image" content="([^"]+)"/)?.[1];
-    if (!og) return "";
-    return new URL(decodeHtml(og), page.finalUrl).href;
+    return productImageFromHtml(page.text, page.finalUrl);
   } catch {
     return "";
   }
