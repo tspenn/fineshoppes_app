@@ -39,7 +39,7 @@ button {
 
 .site-header {
   background: var(--deep);
-  padding: 2rem 1.5rem 1.75rem;
+  padding: 1.15rem 1.5rem 1.05rem;
   text-align: center;
 }
 
@@ -49,19 +49,8 @@ button {
   text-decoration: none;
 }
 
-.logo {
-  display: block;
-  height: 8rem;
-  width: auto;
-  margin: 0 auto;
-}
-
-.mobile-header {
-  display: none;
-}
-
 .tagline {
-  margin: 0.55rem 0 0;
+  margin: 0;
   color: var(--gold);
   font-size: 0.75rem;
   font-weight: 400;
@@ -86,6 +75,11 @@ nav a[aria-current="page"] {
   color: var(--gold);
 }
 
+.banner-link {
+  display: block;
+  line-height: 0;
+}
+
 .banner {
   display: block;
   width: 100%;
@@ -95,7 +89,7 @@ nav a[aria-current="page"] {
 main {
   max-width: 78rem;
   margin: 0 auto;
-  padding: 4rem 2rem 4rem;
+  padding: 2.25rem 2rem 4rem;
 }
 
 .intro,
@@ -348,23 +342,6 @@ footer p {
 }
 
 @media (max-width: 720px) {
-  .mobile-header {
-    display: block;
-    line-height: 0;
-  }
-
-  .mobile-header img {
-    display: block;
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-  }
-
-  .logo,
-  .banner {
-    display: none;
-  }
-
   .site-header {
     padding: 0.7rem 1rem 0.65rem;
   }

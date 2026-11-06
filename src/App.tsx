@@ -124,12 +124,11 @@ export default function App() {
 
   return (
     <div className="page">
-      <a className="mobile-header" href="/" onClick={goHome}>
-        <img src="/banner-shops.jpg" alt="Fineshoppes" />
+      <a className="banner-link" href="/" onClick={goHome}>
+        <img className="banner" src="/banner-shops.jpg" alt="Fineshoppes" />
       </a>
       <header className="site-header">
         <a className="brand" href="/" onClick={goHome}>
-          <img className="logo" src="/fineshoppes-logo.png" alt="" />
           <p className="tagline">Carefully curated especially for you!</p>
         </a>
         <nav>
@@ -138,7 +137,6 @@ export default function App() {
           </a>
         </nav>
       </header>
-      <img className="banner" src="/banner-shops.jpg" alt="Fineshoppes storefront banner" />
 
       <main>
       <div className="intro">
