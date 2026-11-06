@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  checkoutLabel,
   isProductPhoto,
   mixByShop,
   shopById,
@@ -204,7 +203,6 @@ function ShopHeading({ shop }: { shop: Shop }) {
     <div className="shop-heading">
       <h2>{shop.name}</h2>
       {shop.tagline ? <p>{shop.tagline}</p> : null}
-      <p className="checkout">{checkoutLabel(shop.checkout)}</p>
       <a href={shop.url} target="_blank" rel="noopener noreferrer">
         Open shop
       </a>
