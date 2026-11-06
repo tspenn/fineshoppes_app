@@ -139,12 +139,9 @@ export default function App() {
       </header>
 
       <main>
-      <div className="intro">
-        <h1>Our Shops at Fineshoppes!</h1>
-      </div>
+      <h1 className="sr-only">Our Shops at Fineshoppes!</h1>
 
       <form className="search" role="search" onSubmit={(event) => event.preventDefault()}>
-        <label htmlFor="q">Search shops and items</label>
         <input
           id="q"
           value={q}
@@ -152,6 +149,7 @@ export default function App() {
           autoComplete="off"
           onChange={(event) => setQ(event.target.value)}
         />
+        <label htmlFor="q">Search shops and items</label>
       </form>
 
       <div className="shops" role="listbox" aria-label="Shops">
